@@ -133,6 +133,10 @@ export const Dashboard = () => {
 
   const kpis = filteredKpis;
   const COLORS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
+  const monthlyTrends = analytics.monthlyTrends || [];
+  const deptStats = analytics.deptStats || [];
+  const topRecruiters = analytics.topRecruiters || [];
+  const recruiterActivity = analytics.recruiterActivity || [];
 
   return (
     <div className="space-y-6 slide-in">
@@ -284,7 +288,7 @@ export const Dashboard = () => {
           <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">Monthly Recruiting Funnel</h4>
           <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={analytics.monthlyTrends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={monthlyTrends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorIntern" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
@@ -315,7 +319,7 @@ export const Dashboard = () => {
           <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">Department Placement Ratios</h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.deptStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={deptStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" className="dark:stroke-slate-800" />
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94A3B8" />
                 <YAxis tick={{ fontSize: 10 }} stroke="#94A3B8" />
@@ -336,7 +340,7 @@ export const Dashboard = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={analytics.topRecruiters}
+                    data={topRecruiters}
                     cx="50%"
                     cy="50%"
                     innerRadius={55}
@@ -344,7 +348,7 @@ export const Dashboard = () => {
                     paddingAngle={3}
                     dataKey="count"
                   >
-                    {analytics.topRecruiters.map((entry, index) => (
+                    {topRecruiters.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -355,7 +359,7 @@ export const Dashboard = () => {
             
             {/* Custom Legend */}
             <div className="space-y-2 mt-4 sm:mt-0">
-              {analytics.topRecruiters.map((entry, index) => (
+              {topRecruiters.map((entry, index) => (
                 <div key={entry.name} className="flex items-center space-x-2.5">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                   <span className="text-xs font-semibold">{entry.name}</span>
@@ -386,7 +390,7 @@ export const Dashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {analytics.recruiterActivity.map((activity, idx) => (
+              {recruiterActivity.map((activity, idx) => (
                 <tr key={idx} className="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50/50 dark:hover:bg-slate-800/10">
                   <td className="py-3.5 px-4 font-semibold text-slate-800 dark:text-slate-200">{activity.name}</td>
                   <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
