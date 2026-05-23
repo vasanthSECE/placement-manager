@@ -402,6 +402,21 @@ export const dbService = {
 
   },
 
+  deleteAllStudents: async () => {
+
+    if (firebaseEnabled) {
+
+      await remove(ref(db, "students"));
+      return true;
+
+    } else {
+
+      return mockDb.deleteAllStudents();
+
+    }
+
+  },
+
 
   // =========================
   // ANALYTICS

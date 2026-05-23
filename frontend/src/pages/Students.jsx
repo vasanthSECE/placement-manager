@@ -126,6 +126,19 @@ export const Students = () => {
     }
   };
 
+  const handleDeleteAllStudents = async () => {
+    if (students.length === 0) return;
+    if (!window.confirm("Delete all student records? This cannot be undone.")) return;
+
+    try {
+      await dbService.deleteAllStudents();
+      setStudents([]);
+      showSuccessMessage("All student records have been deleted.");
+    } catch (err) {
+      setError("Failed to delete all students: " + err.message);
+    }
+  };
+
   const handleStatusChange = (e) => {
     const status = e.target.value;
     let updateObj = { placementStatus: status };
@@ -187,37 +200,67 @@ export const Students = () => {
     }
   };
 
+  const parseCsvLine = (line) => {
+    const values = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        const nextChar = line[i + 1];
+        if (inQuotes && nextChar === '"') {
+          current += '"';
+          i += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        values.push(current);
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+
+    values.push(current);
+    return values;
+  };
+
   // Bulk CSV Import parser
   const handleCsvUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    setError("");
+    setLoading(true);
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
         const text = event.target.result;
-        const rows = text.split("\n").map(r => r.trim()).filter(Boolean);
+        const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
         if (rows.length <= 1) {
           setError("CSV file is empty or missing headers.");
+          setLoading(false);
           return;
         }
 
         // Headers check: name, registerNumber, department, yearOfStudy, cgpa, skills, certifications, internshipExperience, aptitudeScore, communicationScore, placementStatus
-        const headers = rows[0].split(",").map(h => h.trim().replace(/^["']|["']$/g, ""));
+        const headers = parseCsvLine(rows[0]).map(h => h.trim().replace(/^['"]|['"]$/g, ""));
         const studentsToUpload = [];
 
         for (let i = 1; i < rows.length; i++) {
-          const rowValues = rows[i].split(",").map(v => v.trim().replace(/^["']|["']$/g, ""));
+          const rowValues = parseCsvLine(rows[i]).map(v => v.trim().replace(/^['"]|['"]$/g, ""));
           if (rowValues.length < headers.length) continue;
 
           const rowObj = {};
           headers.forEach((header, index) => {
-            rowObj[header] = rowValues[index];
+            rowObj[header] = rowValues[index] || "";
           });
 
-          // Parsing properties
-          const skills = rowObj.skills ? rowObj.skills.split(";").map(s => s.trim()) : [];
-          const certifications = rowObj.certifications ? rowObj.certifications.split(";").map(c => c.trim()) : [];
+          const skills = rowObj.skills ? rowObj.skills.split(";").map(s => s.trim()).filter(Boolean) : [];
+          const certifications = rowObj.certifications ? rowObj.certifications.split(";").map(c => c.trim()).filter(Boolean) : [];
 
           const studentPayload = {
             name: rowObj.name || "Unknown Student",
@@ -239,14 +282,15 @@ export const Students = () => {
           studentsToUpload.push(studentPayload);
         }
 
-        // Perform bulk upload
-        setLoading(true);
-        for (const stud of studentsToUpload) {
-          await dbService.saveStudent(stud);
+        if (studentsToUpload.length === 0) {
+          setError("No valid student rows found. Please check the CSV headers and data format.");
+          setLoading(false);
+          return;
         }
 
+        await Promise.all(studentsToUpload.map(stud => dbService.saveStudent(stud)));
         showSuccessMessage(`Successfully imported ${studentsToUpload.length} students!`);
-        loadData();
+        await loadData();
       } catch (err) {
         setError("Error parsing CSV data. Make sure it follows proper column names: " + err.message);
         setLoading(false);
@@ -301,6 +345,15 @@ export const Students = () => {
           >
             <Plus size={16} />
             <span>Add Student</span>
+          </button>
+
+          <button
+            onClick={handleDeleteAllStudents}
+            disabled={students.length === 0}
+            className="flex items-center justify-center space-x-1.5 px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-xs shadow-lg shadow-rose-500/20 transition-all active:scale-[0.98]"
+          >
+            <Trash2 size={16} />
+            <span>Delete All</span>
           </button>
         </div>
       </div>
