@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 transition-colors duration-300 font-sans antialiased;
+  }
+  
+  body.dark, html.dark {
+    @apply bg-slate-950 text-slate-50;
+  }
+
+  /* Custom Scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-slate-800 rounded-full transition-colors;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400 dark:bg-slate-700;
+  }
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  @apply bg-white/70 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 shadow-xl shadow-slate-100/10 dark:shadow-none;
+}
+
+.glass-card {
+  @apply bg-white/60 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200/30 dark:border-slate-800/30 shadow-md transition-all duration-300;
+}
+
+.glass-card:hover {
+  @apply border-primary-500/30 dark:border-primary-400/30 shadow-lg -translate-y-0.5;
+}
+
+/* Gradients */
+.gradient-primary {
+  @apply bg-gradient-to-r from-primary-600 to-indigo-600 text-white;
+}
+
+.gradient-success {
+  @apply bg-gradient-to-r from-emerald-600 to-teal-600 text-white;
+}
+
+.gradient-warning {
+  @apply bg-gradient-to-r from-amber-500 to-orange-500 text-white;
+}
+
+.gradient-danger {
+  @apply bg-gradient-to-r from-rose-600 to-pink-600 text-white;
+}
+
+.gradient-dark {
+  @apply bg-gradient-to-r from-slate-800 to-slate-900 text-white;
+}
+
+.gradient-text-primary {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400;
+}
+
+.gradient-text-success {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500;
+}
+
+/* Gauge Animation */
+@keyframes dash {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.gauge-path {
+  stroke-dasharray: 283;
+  stroke-dashoffset: 283;
+  animation: dash 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Slide in animation */
+.slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
