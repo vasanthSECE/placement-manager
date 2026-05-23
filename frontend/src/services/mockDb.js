@@ -606,6 +606,12 @@ export const mockDb = {
     return true;
   },
 
+  deleteAllCompanies: async () => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    save("companies", []);
+    return true;
+  },
+
   // --- STUDENTS CRUD ---
   getStudents: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));

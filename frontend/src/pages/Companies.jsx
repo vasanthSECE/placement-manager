@@ -111,6 +111,19 @@ export const Companies = () => {
     }
   };
 
+  const handleDeleteAllCompanies = async () => {
+    if (companies.length === 0) return;
+    if (!window.confirm("Are you sure you want to delete all company visits? This action cannot be undone.")) return;
+
+    try {
+      await dbService.deleteAllCompanies();
+      setCompanies([]);
+      showSuccessMessage("All company visit records have been deleted.");
+    } catch (err) {
+      setError("Failed to delete all companies. " + err.message);
+    }
+  };
+
   const handleDeptCheckbox = (dept) => {
     const currentDepts = [...formState.eligibleDepartments];
     if (currentDepts.includes(dept)) {
@@ -195,13 +208,23 @@ export const Companies = () => {
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage schedules, eligibility, and offers for recruiters.</p>
         </div>
 
-        <button
-          onClick={handleOpenAddModal}
-          className="flex items-center justify-center space-x-1.5 px-4 py-2 rounded-xl bg-primary-600 text-white hover:bg-primary-500 font-semibold text-xs shadow-lg shadow-primary-500/25 transition-all active:scale-[0.98]"
-        >
-          <Plus size={16} />
-          <span>Add Company Drive</span>
-        </button>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
+          <button
+            onClick={handleOpenAddModal}
+            className="flex items-center justify-center space-x-1.5 px-4 py-2 rounded-xl bg-primary-600 text-white hover:bg-primary-500 font-semibold text-xs shadow-lg shadow-primary-500/25 transition-all active:scale-[0.98]"
+          >
+            <Plus size={16} />
+            <span>Add Company Drive</span>
+          </button>
+          <button
+            onClick={handleDeleteAllCompanies}
+            disabled={companies.length === 0}
+            className="flex items-center justify-center space-x-1.5 px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-xs shadow-lg shadow-rose-500/20 transition-all active:scale-[0.98]"
+          >
+            <Trash2 size={16} />
+            <span>Delete All</span>
+          </button>
+        </div>
       </div>
 
       {success && (

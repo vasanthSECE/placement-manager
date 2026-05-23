@@ -311,6 +311,21 @@ export const dbService = {
 
   },
 
+  deleteAllCompanies: async () => {
+
+    if (firebaseEnabled) {
+
+      await remove(ref(db, "companies"));
+      return true;
+
+    } else {
+
+      return mockDb.deleteAllCompanies();
+
+    }
+
+  },
+
 
   // =========================
   // STUDENTS CRUD
