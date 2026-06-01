@@ -581,23 +581,31 @@ export const Students = () => {
       {/* CRUD Form Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto slide-in">
-            
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              <X size={16} />
-            </button>
+          <form 
+            onSubmit={handleSubmit} 
+            className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col slide-in relative"
+            style={{ maxHeight: '85vh' }}
+          >
+            {/* Modal Header */}
+            <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="absolute top-6 right-6 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                <X size={16} />
+              </button>
 
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-              {editingStudent ? "Modify Student Profile" : "Register Student Record"}
-            </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-5">
-              Enter academic metrics, performance evaluations, skills, and placement offers.
-            </p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                {editingStudent ? "Modify Student Profile" : "Register Student Record"}
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Enter academic metrics, performance evaluations, skills, and placement offers.
+              </p>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Scrollable Form Fields */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0">
               {/* Row 1 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -776,52 +784,60 @@ export const Students = () => {
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-primary-600 text-white hover:bg-primary-500 text-xs font-semibold shadow-lg shadow-primary-500/10"
-                >
-                  {editingStudent ? "Save Changes" : "Register Student"}
-                </button>
-              </div>
-            </form>
-          </div>
+            {/* Action Buttons */}
+            <div className="p-6 pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end space-x-3 bg-slate-50/50 dark:bg-slate-950/20 rounded-b-3xl shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-primary-600 text-white hover:bg-primary-500 text-xs font-semibold shadow-lg shadow-primary-500/10"
+              >
+                {editingStudent ? "Save Changes" : "Register Student"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
       {/* Detail Viewer Modal */}
       {isDetailsOpen && selectedStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 relative slide-in">
-            <button
-              onClick={() => setIsDetailsOpen(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              <X size={16} />
-            </button>
+          <div 
+            className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col slide-in relative"
+            style={{ maxHeight: '85vh' }}
+          >
+            
+            {/* Modal Header */}
+            <div className="p-6 pb-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsDetailsOpen(false)}
+                className="absolute top-6 right-6 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                <X size={16} />
+              </button>
 
-            {/* Profile Info Header */}
-            <div className="flex items-center space-x-4 pb-4 border-b border-slate-200 dark:border-slate-800 mb-5">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary-600 to-indigo-600 text-white font-extrabold flex items-center justify-center text-xl shadow-lg">
-                {selectedStudent.name.charAt(0)}
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.name}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Reg Num: {selectedStudent.registerNumber}</p>
+              {/* Profile Info Header */}
+              <div className="flex items-center space-x-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary-600 to-indigo-600 text-white font-extrabold flex items-center justify-center text-xl shadow-lg shrink-0">
+                  {selectedStudent.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.name}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Reg Num: {selectedStudent.registerNumber}</p>
+                </div>
               </div>
             </div>
 
-            {/* Stats list */}
-            <div className="space-y-4">
+            {/* Scrollable Content Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/40">
                   <span className="text-[9px] uppercase font-semibold text-slate-400">Department</span>
@@ -908,6 +924,17 @@ export const Students = () => {
                   <p className="text-xs text-slate-500 font-semibold italic">Currently looking for opportunities (Unplaced)</p>
                 )}
               </div>
+            </div>
+
+            {/* Footer with a simple Close Button */}
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800/60 flex justify-end bg-slate-50/50 dark:bg-slate-950/20 rounded-b-3xl shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsDetailsOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

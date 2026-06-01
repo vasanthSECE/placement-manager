@@ -425,30 +425,38 @@ export const Companies = () => {
       {/* CRUD Add/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto slide-in">
-            
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              <X size={16} />
-            </button>
+          <form 
+            onSubmit={handleSubmit} 
+            className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col slide-in relative"
+            style={{ maxHeight: '85vh' }}
+          >
+            {/* Modal Header */}
+            <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="absolute top-6 right-6 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                <X size={16} />
+              </button>
 
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-              {editingCompany ? "Modify Recruitment Drive" : "Schedule New Visiting Recruiter"}
-            </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-5">
-              Enter recruiter parameters, eligibility criteria, and technical skills demanded.
-            </p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                {editingCompany ? "Modify Recruitment Drive" : "Schedule New Visiting Recruiter"}
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Enter recruiter parameters, eligibility criteria, and technical skills demanded.
+              </p>
+            </div>
 
             {error && (
-              <div className="flex items-center space-x-2 p-3 mb-5 rounded-xl bg-rose-950/30 border border-rose-900/50 text-rose-400 text-xs">
+              <div className="mx-6 mt-4 flex items-center space-x-2 p-3 rounded-xl bg-rose-950/30 border border-rose-900/50 text-rose-400 text-xs shrink-0">
                 <AlertTriangle size={16} className="shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Scrollable Form Fields */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0">
               {/* Row 1 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -599,28 +607,28 @@ export const Companies = () => {
                   value={formState.skillsRequired}
                   onChange={(e) => setFormState({ ...formState, skillsRequired: e.target.value })}
                   rows="2"
-                  className="w-full py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs resize-none"
+                  className="w-full py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 focus:border-primary-500 focus:outline-none text-xs resize-none"
                 />
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-primary-600 text-white hover:bg-primary-500 text-xs font-semibold shadow-lg shadow-primary-500/10"
-                >
-                  {editingCompany ? "Save Changes" : "Create Record"}
-                </button>
-              </div>
-            </form>
-          </div>
+            {/* Action Buttons */}
+            <div className="p-6 pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end space-x-3 bg-slate-50/50 dark:bg-slate-950/20 rounded-b-3xl shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-primary-600 text-white hover:bg-primary-500 text-xs font-semibold shadow-lg shadow-primary-500/10"
+              >
+                {editingCompany ? "Save Changes" : "Create Record"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

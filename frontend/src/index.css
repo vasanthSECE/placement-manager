@@ -71,14 +71,16 @@
 
 /* Gauge Animation */
 @keyframes dash {
+  from {
+    stroke-dashoffset: var(--initial-offset, 364);
+  }
   to {
-    stroke-dashoffset: 0;
+    stroke-dashoffset: var(--target-offset, 0);
   }
 }
 
 .gauge-path {
-  stroke-dasharray: 283;
-  stroke-dashoffset: 283;
+  stroke-dasharray: var(--stroke-dasharray, 364);
   animation: dash 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 

@@ -267,8 +267,11 @@ export const Dashboard = () => {
                 stroke="currentColor"
                 strokeWidth="10"
                 className="text-primary-600 dark:text-primary-400 gauge-path"
-                strokeDasharray="408"
-                strokeDashoffset={408 - (408 * kpis.percentage) / 100}
+                style={{
+                  "--stroke-dasharray": "408",
+                  "--initial-offset": "408",
+                  "--target-offset": 408 - (408 * kpis.percentage) / 100
+                }}
                 fill="transparent"
                 strokeLinecap="round"
               />

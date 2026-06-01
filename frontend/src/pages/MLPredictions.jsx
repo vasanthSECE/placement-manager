@@ -353,8 +353,11 @@ export const MLPredictions = () => {
                             ? "text-amber-500" 
                             : "text-rose-500"
                         } gauge-path`}
-                        strokeDasharray="364"
-                        strokeDashoffset={364 - (364 * placementProb) / 100}
+                        style={{
+                          "--stroke-dasharray": "364",
+                          "--initial-offset": "364",
+                          "--target-offset": 364 - (364 * placementProb) / 100
+                        }}
                         fill="transparent"
                         strokeLinecap="round"
                       />
