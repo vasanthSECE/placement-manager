@@ -485,7 +485,7 @@ export const dbService = {
             ).toFixed(2)
           : 0;
 
-      const departments = ["CSE", "IT", "ECE", "EEE", "MECH", "CIVIL"];
+      const departments = ["CSE", "IT", "ECE", "EEE", "MECH", "AI-DS", "AI-ML"];
 
       const deptStats = departments.map(dept => {
         const deptStudents = students.filter(s => s.department === dept);

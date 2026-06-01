@@ -37,7 +37,7 @@ export const Reports = () => {
   }, []);
 
   const getDepartmentSummary = () => {
-    const depts = ["CSE", "IT", "ECE", "EEE", "MECH", "CIVIL"];
+    const depts = ["CSE", "IT", "ECE", "EEE", "MECH", "AI-DS", "AI-ML"];
     return depts.map(dept => {
       const deptStudents = students.filter(s => s.department === dept);
       const placed = deptStudents.filter(s => s.placementStatus === "Placed" || s.placementStatus === "Interned");

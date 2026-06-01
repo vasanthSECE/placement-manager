@@ -403,7 +403,8 @@ export const Students = () => {
               <option value="ECE">ECE</option>
               <option value="EEE">EEE</option>
               <option value="MECH">MECH</option>
-              <option value="CIVIL">CIVIL</option>
+              <option value="AI-DS">AI-DS</option>
+              <option value="AI-ML">AI-ML</option>
             </select>
           </div>
 
@@ -647,7 +648,8 @@ export const Students = () => {
                     <option value="ECE">ECE</option>
                     <option value="EEE">EEE</option>
                     <option value="MECH">MECH</option>
-                    <option value="CIVIL">CIVIL</option>
+                    <option value="AI-DS">AI-DS</option>
+                    <option value="AI-ML">AI-ML</option>
                   </select>
                 </div>
                 <div>

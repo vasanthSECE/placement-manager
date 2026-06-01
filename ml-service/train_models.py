@@ -12,7 +12,7 @@ def generate_synthetic_data(num_samples=1200):
     np.random.seed(42)
     
     # Departments
-    departments = ["CSE", "ECE", "EEE", "MECH", "CIVIL", "IT"]
+    departments = ["CSE", "ECE", "EEE", "MECH", "AI-DS", "AI-ML", "IT"]
     dept_choices = np.random.choice(departments, size=num_samples)
     
     # CGPA (5.0 to 10.0)

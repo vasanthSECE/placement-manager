@@ -47,7 +47,7 @@ export const Companies = () => {
     skillsRequired: ""
   });
 
-  const availableDepts = ["CSE", "IT", "ECE", "EEE", "MECH", "CIVIL"];
+  const availableDepts = ["CSE", "IT", "ECE", "EEE", "MECH", "AI-DS", "AI-ML"];
 
   const loadCompanies = async () => {
     setLoading(true);

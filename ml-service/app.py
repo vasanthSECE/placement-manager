@@ -194,7 +194,7 @@ def recommend_companies():
                     "companyName": "Tata Consultancy Services (TCS)",
                     "role": "Ninja Developer",
                     "minimumCGPA": 6.0,
-                    "eligibleDepartments": ["CSE", "IT", "ECE", "EEE", "MECH", "CIVIL"],
+                    "eligibleDepartments": ["CSE", "IT", "ECE", "EEE", "MECH", "AI-DS", "AI-ML"],
                     "skillsRequired": ["Java", "C++", "SQL", "HTML"],
                     "package": 4.5
                 },
@@ -202,7 +202,7 @@ def recommend_companies():
                     "companyName": "Infosys",
                     "role": "Systems Engineer",
                     "minimumCGPA": 6.0,
-                    "eligibleDepartments": ["CSE", "IT", "ECE", "EEE", "MECH", "CIVIL"],
+                    "eligibleDepartments": ["CSE", "IT", "ECE", "EEE", "MECH", "AI-DS", "AI-ML"],
                     "skillsRequired": ["Python", "Java", "SQL", "Web Development"],
                     "package": 4.0
                 },
@@ -234,7 +234,7 @@ def recommend_companies():
                     "companyName": "L&T Technology Services",
                     "role": "Graduate Engineer Trainee",
                     "minimumCGPA": 6.5,
-                    "eligibleDepartments": ["MECH", "CIVIL", "EEE", "ECE"],
+                    "eligibleDepartments": ["MECH", "AI-DS", "AI-ML", "EEE", "ECE"],
                     "skillsRequired": ["AutoCAD", "MATLAB", "C", "Project Management"],
                     "package": 5.0
                 }

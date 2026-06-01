@@ -44,7 +44,7 @@ const INITIAL_COMPANIES = [
     stipend: 0,
     package: 4.5,
     visitDate: "2025-11-20",
-    eligibleDepartments: ["CSE", "IT", "ECE", "EEE", "MECH", "CIVIL"],
+    eligibleDepartments: ["CSE", "IT", "ECE", "EEE", "MECH", "AI-DS", "AI-ML"],
     minimumCGPA: 6.0,
     internshipCount: 0,
     fullTimeCount: 18,
@@ -61,7 +61,7 @@ const INITIAL_COMPANIES = [
     stipend: 0,
     package: 4.0,
     visitDate: "2025-11-15",
-    eligibleDepartments: ["CSE", "IT", "ECE", "EEE", "MECH", "CIVIL"],
+    eligibleDepartments: ["CSE", "IT", "ECE", "EEE", "MECH", "AI-DS", "AI-ML"],
     minimumCGPA: 6.0,
     internshipCount: 0,
     fullTimeCount: 12,
@@ -129,7 +129,7 @@ const INITIAL_COMPANIES = [
     stipend: 0,
     package: 5.0,
     visitDate: "2025-12-02",
-    eligibleDepartments: ["MECH", "CIVIL", "EEE", "ECE"],
+    eligibleDepartments: ["MECH", "AI-DS", "AI-ML", "EEE", "ECE"],
     minimumCGPA: 6.5,
     internshipCount: 0,
     fullTimeCount: 8,
@@ -413,11 +413,11 @@ const INITIAL_STUDENTS = [
     id: "stud-14",
     name: "Kriti Sanon",
     registerNumber: "312221103014",
-    department: "CIVIL",
+    department: "AI-DS",
     yearOfStudy: "4th Year",
     cgpa: 7.20,
-    skills: ["STAAD Pro", "Revit", "AutoCAD", "Excel"],
-    certifications: ["Revit Architecture Professional"],
+    skills: ["Python", "SQL", "Tableau", "Power BI", "Excel"],
+    certifications: ["Google Data Analytics Professional"],
     internshipExperience: 1,
     aptitudeScore: 72,
     communicationScore: 82,
@@ -677,7 +677,7 @@ export const mockDb = {
     const placementPercentage = fourthYears.length ? (fourthYearsPlaced / fourthYears.length) * 100 : 0;
 
     // Department-wise stats
-    const departments = ["CSE", "IT", "ECE", "EEE", "MECH", "CIVIL"];
+    const departments = ["CSE", "IT", "ECE", "EEE", "MECH", "AI-DS", "AI-ML"];
     const deptStats = departments.map(dept => {
       const deptStudents = students.filter(s => s.department === dept);
       const deptPlaced = deptStudents.filter(s => s.placementStatus === "Placed" || s.placementStatus === "Interned").length;
