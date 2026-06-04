@@ -13,6 +13,7 @@ import MLPredictions from "./pages/MLPredictions";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
+import MockInterview from "./pages/MockInterview";
 
 // Protected Route Guard
 const ProtectedRoute = ({ children }) => {
@@ -30,6 +31,24 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
   
+  return children;
+};
+
+// Admin Route Guard
+const AdminRoute = ({ children }) => {
+  const { user } = useAuth();
+  if (user?.role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
+
+// Student Route Guard
+const StudentRoute = ({ children }) => {
+  const { user } = useAuth();
+  if (user?.role !== "student") {
+    return <Navigate to="/" replace />;
+  }
   return children;
 };
 
@@ -65,12 +84,13 @@ export const App = () => {
         }
       >
         <Route index element={<Dashboard />} />
-        <Route path="companies" element={<Companies />} />
-        <Route path="students" element={<Students />} />
-        <Route path="analytics" element={<Analytics />} />
+        <Route path="companies" element={<AdminRoute><Companies /></AdminRoute>} />
+        <Route path="students" element={<AdminRoute><Students /></AdminRoute>} />
+        <Route path="analytics" element={<AdminRoute><Analytics /></AdminRoute>} />
         <Route path="predictions" element={<MLPredictions />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="settings" element={<Settings />} />
+        <Route path="interview" element={<StudentRoute><MockInterview /></StudentRoute>} />
+        <Route path="reports" element={<AdminRoute><Reports /></AdminRoute>} />
+        <Route path="settings" element={<AdminRoute><Settings /></AdminRoute>} />
       </Route>
 
       {/* Redirects */}

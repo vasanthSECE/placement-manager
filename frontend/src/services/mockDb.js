@@ -1,7 +1,7 @@
 // Simulated Local Storage Database
 // Pre-populated with realistic placement analytics data
 
-const INITIAL_COMPANIES = [
+export const INITIAL_COMPANIES = [
   {
     id: "comp-1",
     companyName: "Google",
@@ -174,7 +174,7 @@ const INITIAL_COMPANIES = [
   }
 ];
 
-const INITIAL_STUDENTS = [
+export const INITIAL_STUDENTS = [
   {
     id: "stud-1",
     name: "Aditya Sharma",
@@ -537,6 +537,27 @@ const INITIAL_STUDENTS = [
   }
 ];
 
+// Helper to retrieve active user's UID
+const getActiveUid = () => {
+  try {
+    const saved = localStorage.getItem("mock_auth_user");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.uid) {
+        return parsed.uid;
+      }
+    }
+  } catch (e) {
+    console.error("Error reading active uid from mock auth", e);
+  }
+  return "default_admin";
+};
+
+// Scoped key builders
+const getCompaniesKey = (uid) => `companies_${uid}`;
+const getStudentsKey = (uid) => `students_${uid}`;
+const getSettingsKey = (uid) => `app_settings_${uid}`;
+
 // Helper to save to localStorage
 const save = (key, data) => {
   localStorage.setItem(key, JSON.stringify(data));
@@ -548,18 +569,48 @@ const fetch = (key) => {
   return data ? JSON.parse(data) : null;
 };
 
-// Init DB
+// User-specific database initializer
+export const initUserMockDb = (uid, force = false) => {
+  const compKey = getCompaniesKey(uid);
+  const studKey = getStudentsKey(uid);
+  const settingsKey = getSettingsKey(uid);
+
+  if (force || !localStorage.getItem(`placement_db_initialized_${uid}`)) {
+    if (uid === "mock-admin" || uid === "mock-student" || uid === "default_admin") {
+      save(compKey, INITIAL_COMPANIES);
+      save(studKey, INITIAL_STUDENTS);
+    } else {
+      save(compKey, []);
+      save(studKey, []);
+    }
+    localStorage.setItem(`placement_db_initialized_${uid}`, "true");
+    
+    // Add default custom settings if missing
+    if (!localStorage.getItem(settingsKey)) {
+      save(settingsKey, {
+        mlEndpoint: "http://localhost:5000",
+        useFirebase: false,
+        theme: "dark",
+        geminiApiKey: ""
+      });
+    }
+    
+    console.log(`Mock Database initialized for user ${uid}.`);
+  }
+};
+
+// Init default database for backward compatibility
 export const initMockDb = (force = false) => {
   if (force || !localStorage.getItem("placement_db_initialized")) {
     save("companies", INITIAL_COMPANIES);
     save("students", INITIAL_STUDENTS);
     localStorage.setItem("placement_db_initialized", "true");
     
-    // Add default custom settings
     save("app_settings", {
       mlEndpoint: "http://localhost:5000",
-      useFirebase: false, // fallback mode
-      theme: "dark"
+      useFirebase: false,
+      theme: "dark",
+      geminiApiKey: ""
     });
     
     console.log("Mock Database initialized successfully.");
@@ -573,12 +624,17 @@ export const mockDb = {
   // --- COMPANIES CRUD ---
   getCompanies: async () => {
     await new Promise(resolve => setTimeout(resolve, 300)); // simulate delay
-    return fetch("companies") || [];
+    const uid = getActiveUid();
+    initUserMockDb(uid);
+    return fetch(getCompaniesKey(uid)) || [];
   },
   
   saveCompany: async (company) => {
     await new Promise(resolve => setTimeout(resolve, 400));
-    const companies = fetch("companies") || [];
+    const uid = getActiveUid();
+    initUserMockDb(uid);
+    const key = getCompaniesKey(uid);
+    const companies = fetch(key) || [];
     if (company.id) {
       // Edit
       const index = companies.findIndex(c => c.id === company.id);
@@ -594,33 +650,43 @@ export const mockDb = {
       };
       companies.push(newCompany);
     }
-    save("companies", companies);
+    save(key, companies);
     return true;
   },
   
   deleteCompany: async (id) => {
     await new Promise(resolve => setTimeout(resolve, 300));
-    let companies = fetch("companies") || [];
+    const uid = getActiveUid();
+    initUserMockDb(uid);
+    const key = getCompaniesKey(uid);
+    let companies = fetch(key) || [];
     companies = companies.filter(c => c.id !== id);
-    save("companies", companies);
+    save(key, companies);
     return true;
   },
 
   deleteAllCompanies: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
-    save("companies", []);
+    const uid = getActiveUid();
+    const key = getCompaniesKey(uid);
+    save(key, []);
     return true;
   },
 
   // --- STUDENTS CRUD ---
   getStudents: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
-    return fetch("students") || [];
+    const uid = getActiveUid();
+    initUserMockDb(uid);
+    return fetch(getStudentsKey(uid)) || [];
   },
   
   saveStudent: async (student) => {
     await new Promise(resolve => setTimeout(resolve, 400));
-    const students = fetch("students") || [];
+    const uid = getActiveUid();
+    initUserMockDb(uid);
+    const key = getStudentsKey(uid);
+    const students = fetch(key) || [];
     if (student.id) {
       // Edit
       const index = students.findIndex(s => s.id === student.id);
@@ -636,29 +702,36 @@ export const mockDb = {
       };
       students.push(newStudent);
     }
-    save("students", students);
+    save(key, students);
     return true;
   },
   
   deleteStudent: async (id) => {
     await new Promise(resolve => setTimeout(resolve, 300));
-    let students = fetch("students") || [];
+    const uid = getActiveUid();
+    initUserMockDb(uid);
+    const key = getStudentsKey(uid);
+    let students = fetch(key) || [];
     students = students.filter(s => s.id !== id);
-    save("students", students);
+    save(key, students);
     return true;
   },
 
   deleteAllStudents: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
-    save("students", []);
+    const uid = getActiveUid();
+    const key = getStudentsKey(uid);
+    save(key, []);
     return true;
   },
 
   // --- ANALYTICS calculations ---
   getAnalytics: async () => {
     await new Promise(resolve => setTimeout(resolve, 500));
-    const students = fetch("students") || [];
-    const companies = fetch("companies") || [];
+    const uid = getActiveUid();
+    initUserMockDb(uid);
+    const students = fetch(getStudentsKey(uid)) || [];
+    const companies = fetch(getCompaniesKey(uid)) || [];
 
     const totalCompanies = companies.length;
     const totalPlaced = students.filter(s => s.placementStatus === "Placed").length;
@@ -690,7 +763,6 @@ export const mockDb = {
     });
 
     // Year-wise stats (2024, 2025, 2026)
-    // We can simulate trends
     const yearWiseTrends = [
       { year: 2024, placementRate: 72.5, highestPackage: 24.0, averagePackage: 5.2, companies: 45 },
       { year: 2025, placementRate: 80.0, highestPackage: 28.5, averagePackage: 5.8, companies: 52 },
@@ -751,17 +823,23 @@ export const mockDb = {
 
   // --- SETTINGS CRUD ---
   getSettings: () => {
-    return fetch("app_settings") || { mlEndpoint: "http://localhost:5000", useFirebase: false, theme: "dark" };
+    const uid = getActiveUid();
+    initUserMockDb(uid);
+    return fetch(getSettingsKey(uid)) || { mlEndpoint: "http://localhost:5000", useFirebase: false, theme: "dark", geminiApiKey: "" };
   },
   
   saveSettings: (settings) => {
-    const current = fetch("app_settings") || {};
-    save("app_settings", { ...current, ...settings });
+    const uid = getActiveUid();
+    initUserMockDb(uid);
+    const key = getSettingsKey(uid);
+    const current = fetch(key) || {};
+    save(key, { ...current, ...settings });
     return true;
   },
   
   resetDb: () => {
-    initMockDb(true);
+    const uid = getActiveUid();
+    initUserMockDb(uid, true);
     return true;
   }
 };

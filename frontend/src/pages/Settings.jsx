@@ -13,10 +13,11 @@ import {
 } from "lucide-react";
 
 export const Settings = () => {
-  const [settings, setSettings] = useState({ mlEndpoint: "http://localhost:5000" });
+  const [settings, setSettings] = useState({ mlEndpoint: "http://localhost:5000", geminiApiKey: "" });
   const [success, setSuccess] = useState("");
   const [mlStatus, setMlStatus] = useState("checking");
   const [mlDetails, setMlDetails] = useState(null);
+  const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
     // Load current settings
@@ -41,7 +42,10 @@ export const Settings = () => {
 
   const handleSave = (e) => {
     e.preventDefault();
-    mockDb.saveSettings({ mlEndpoint: settings.mlEndpoint });
+    mockDb.saveSettings({ 
+      mlEndpoint: settings.mlEndpoint,
+      geminiApiKey: settings.geminiApiKey 
+    });
     setSuccess("Settings saved successfully.");
     setTimeout(() => setSuccess(""), 3000);
     checkConnection();
@@ -75,30 +79,56 @@ export const Settings = () => {
           <h3 className="text-sm font-bold">API & Endpoint Configurations</h3>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} className="space-y-5">
           <div>
             <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">
               Flask Machine Learning API URL
             </label>
-            <div className="flex gap-3">
-              <input
-                type="url"
-                required
-                placeholder="http://localhost:5000"
-                value={settings.mlEndpoint}
-                onChange={(e) => setSettings({ ...settings, mlEndpoint: e.target.value })}
-                className="flex-1 py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-primary-500/10"
-              >
-                Save & Connect
-              </button>
-            </div>
+            <input
+              type="url"
+              required
+              placeholder="http://localhost:5000"
+              value={settings.mlEndpoint}
+              onChange={(e) => setSettings({ ...settings, mlEndpoint: e.target.value })}
+              className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs"
+            />
             <p className="text-[10px] text-slate-400 mt-1.5">
               Specifies the hostname where the Python Flask service is active (default is http://localhost:5000).
             </p>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">
+              Gemini API Key (For AI Mock Interview Coach)
+            </label>
+            <div className="relative flex">
+              <input
+                type={showKey ? "text" : "password"}
+                placeholder="AIzaSy..."
+                value={settings.geminiApiKey || ""}
+                onChange={(e) => setSettings({ ...settings, geminiApiKey: e.target.value })}
+                className="flex-1 py-2 pl-3 pr-20 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs text-slate-800 dark:text-slate-100"
+              />
+              <button
+                type="button"
+                onClick={() => setShowKey(!showKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                {showKey ? "Hide" : "Show"}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-1.5">
+              Provides the API Key to call Google's Gemini-1.5-flash model. Leave blank to run in offline mock simulation mode.
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <button
+              type="submit"
+              className="px-6 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-primary-500/10 transition-colors"
+            >
+              Save Configurations
+            </button>
           </div>
         </form>
       </div>

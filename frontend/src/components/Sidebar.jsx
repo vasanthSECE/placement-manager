@@ -12,7 +12,8 @@ import {
   LogOut, 
   ChevronLeft, 
   ChevronRight, 
-  GraduationCap 
+  GraduationCap,
+  Sparkles
 } from "lucide-react";
 
 export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
@@ -23,15 +24,19 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
 
-  const menuItems = [
-    { name: "Dashboard", path: "/", icon: LayoutDashboard },
-    { name: "Companies", path: "/companies", icon: Briefcase },
-    { name: "Students", path: "/students", icon: Users },
-    { name: "Analytics", path: "/analytics", icon: BarChart3 },
-    { name: "ML Predictions", path: "/predictions", icon: Brain },
-    { name: "Reports", path: "/reports", icon: FileText },
-    { name: "Settings", path: "/settings", icon: Settings }
+  const allMenuItems = [
+    { name: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "student"] },
+    { name: "Companies", path: "/companies", icon: Briefcase, roles: ["admin"] },
+    { name: "Students", path: "/students", icon: Users, roles: ["admin"] },
+    { name: "Analytics", path: "/analytics", icon: BarChart3, roles: ["admin"] },
+    { name: "ML Predictions", path: "/predictions", icon: Brain, roles: ["admin", "student"] },
+    { name: "AI Mock Interview", path: "/interview", icon: Sparkles, roles: ["student"] },
+    { name: "Reports", path: "/reports", icon: FileText, roles: ["admin"] },
+    { name: "Settings", path: "/settings", icon: Settings, roles: ["admin"] }
   ];
+
+  const userRole = user?.role || "student";
+  const menuItems = allMenuItems.filter(item => item.roles.includes(userRole));
 
   const handleLogout = async () => {
     try {

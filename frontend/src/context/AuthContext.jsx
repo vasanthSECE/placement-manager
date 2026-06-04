@@ -9,7 +9,21 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = dbService.onAuthStateChangedListener((currentUser) => {
-      setUser(currentUser);
+      if (currentUser) {
+        const savedRole = localStorage.getItem("user_role_" + currentUser.uid) || "student";
+        const linkedStudentId = localStorage.getItem("linked_student_id_" + currentUser.uid) || "stud-1";
+        
+        setUser({
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
+          role: savedRole,
+          studentId: savedRole === "student" ? linkedStudentId : undefined
+        });
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
@@ -18,10 +32,10 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, password, role) => {
     setLoading(true);
     try {
-      const u = await dbService.login(email, password);
+      const u = await dbService.login(email, password, role);
       setUser(u);
       return u;
     } finally {
@@ -29,10 +43,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (role) => {
     setLoading(true);
     try {
-      const u = await dbService.loginWithGoogle();
+      const u = await dbService.loginWithGoogle(role);
       setUser(u);
       return u;
     } finally {

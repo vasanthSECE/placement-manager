@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { dbService } from "../services/firebase";
+import { mlService } from "../services/mlService";
 import { 
   Building2, 
   UserCheck, 
@@ -9,7 +12,12 @@ import {
   Percent, 
   Calendar,
   Sparkles,
-  ArrowUpRight
+  ArrowUpRight,
+  GraduationCap,
+  BookOpen,
+  CheckCircle2,
+  ArrowRight,
+  Zap
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -28,14 +36,34 @@ import {
   Tooltip,
   Legend
 } from "recharts";
-
 export const Dashboard = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const studentId = user?.studentId || "stud-1"; // Default to Aditya Sharma for student view
+
   const [analytics, setAnalytics] = useState(null);
   const [students, setStudents] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Interactive Filters
+  // Student-specific states
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [predictedProbability, setPredictedProbability] = useState(null);
+  const [predictedSalary, setPredictedSalary] = useState(null);
+
+  // Profile setup wizard states
+  const [selectedExistingId, setSelectedExistingId] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState(user?.displayName || "");
+  const [newRegNo, setNewRegNo] = useState("");
+  const [newDept, setNewDept] = useState("CSE");
+  const [newYear, setNewYear] = useState("4th Year");
+  const [newCgpa, setNewCgpa] = useState("8.0");
+  const [newSkills, setNewSkills] = useState("");
+  const [newCerts, setNewCerts] = useState("");
+  const [newInternships, setNewInternships] = useState("0");
+
+  // Interactive Filters (Admin)
   const [selectedYear, setSelectedYear] = useState("All");
   const [selectedDept, setSelectedDept] = useState("All");
 
@@ -60,6 +88,61 @@ export const Dashboard = () => {
         setStudents(studList);
         setCompanies(compList);
         setAnalytics(analyticsData);
+
+        // 1. Check linked student ID in localStorage
+        let linkedId = localStorage.getItem("linked_student_id_" + user?.uid);
+        
+        // 2. Try to find student in list
+        let activeStudent = null;
+        if (linkedId) {
+          activeStudent = studList.find(s => s.id === linkedId);
+        }
+        
+        // 3. Auto-match by name if not explicitly linked
+        if (!activeStudent && user?.displayName && user?.displayName !== "Aditya Sharma" && user?.displayName !== "Google Admin" && user?.displayName !== "Placement Admin") {
+          const cleanName = user.displayName.toLowerCase().replace(/[^a-z0-9]/g, "");
+          activeStudent = studList.find(s => {
+            const cleanSName = s.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+            return cleanSName.includes(cleanName) || cleanName.includes(cleanSName);
+          });
+          if (activeStudent) {
+            localStorage.setItem("linked_student_id_" + user?.uid, activeStudent.id);
+          }
+        }
+        
+        // 4. Default mock-student credentials mapping to Aditya Sharma
+        if (!activeStudent && user?.uid === "mock-student") {
+          activeStudent = studList.find(s => s.id === "stud-1") || studList[0];
+        }
+
+        if (activeStudent) {
+          setStudentProfile(activeStudent);
+          
+          // Fetch predictions
+          const placementRes = await mlService.predictPlacement({
+            cgpa: activeStudent.cgpa,
+            aptitudeScore: activeStudent.aptitudeScore || 70,
+            communicationScore: activeStudent.communicationScore || 70,
+            internshipExperience: activeStudent.internshipExperience || 0,
+            certifications: activeStudent.certifications || [],
+            skills: activeStudent.skills || [],
+            department: activeStudent.department || "CSE"
+          });
+          
+          const shadowSalaryRes = await mlService.predictSalary({
+            cgpa: activeStudent.cgpa,
+            internshipExperience: activeStudent.internshipExperience || 0,
+            certifications: activeStudent.certifications || [],
+            skills: activeStudent.skills || []
+          });
+
+          if (placementRes?.success) {
+            setPredictedProbability(placementRes.placementProbability);
+          }
+          if (shadowSalaryRes?.success) {
+            setPredictedSalary(shadowSalaryRes.expectedSalary);
+          }
+        }
       } catch (err) {
         console.error("Error loading dashboard data:", err);
       } finally {
@@ -68,9 +151,57 @@ export const Dashboard = () => {
     };
     
     fetchData();
-  }, []);
+  }, [studentId, user]);
 
-  // Update KPIs based on year and department filters
+  const handleLinkExisting = (e) => {
+    e.preventDefault();
+    if (!selectedExistingId) return;
+    localStorage.setItem("linked_student_id_" + user?.uid, selectedExistingId);
+    window.location.reload();
+  };
+
+  const handleCreateAndLink = async (e) => {
+    e.preventDefault();
+    if (!newName || !newRegNo) return;
+    
+    const parsedSkills = newSkills ? newSkills.split(",").map(s => s.trim()).filter(Boolean) : [];
+    const parsedCerts = newCerts ? newCerts.split(",").map(c => c.trim()).filter(Boolean) : [];
+    
+    const newStudent = {
+      name: newName,
+      registerNumber: newRegNo,
+      department: newDept,
+      yearOfStudy: newYear,
+      cgpa: parseFloat(newCgpa) || 8.0,
+      skills: parsedSkills,
+      certifications: parsedCerts,
+      internshipExperience: parseInt(newInternships) || 0,
+      aptitudeScore: 75,
+      communicationScore: 75,
+      placementStatus: "Unplaced",
+      selectedCompany: "",
+      offerType: "",
+      package: 0
+    };
+    
+    setLoading(true);
+    try {
+      await dbService.saveStudent(newStudent);
+      const updatedStudList = await dbService.getStudents();
+      const created = updatedStudList.find(s => s.registerNumber === newRegNo);
+      if (created) {
+        localStorage.setItem("linked_student_id_" + user?.uid, created.id);
+      }
+      window.location.reload();
+    } catch (err) {
+      console.error("Error creating student record:", err);
+      alert("Failed to create profile. Please check inputs.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update KPIs based on year and department filters (for Admin Dashboard)
   useEffect(() => {
     if (students.length === 0 && companies.length === 0) return;
 
@@ -83,12 +214,10 @@ export const Dashboard = () => {
     }
     
     // Filter by year
-    // Note: companies have a 'year' attribute, students might have it mapped or we check their register/company year.
     if (selectedYear !== "All") {
       const yearNum = parseInt(selectedYear);
       targetCompanies = targetCompanies.filter(c => c.year === yearNum);
       
-      // Filter students placed/interned in that company year
       targetStudents = targetStudents.filter(s => {
         if (!s.selectedCompany) return false;
         const comp = companies.find(c => c.companyName === s.selectedCompany && c.year === yearNum);
@@ -104,7 +233,6 @@ export const Dashboard = () => {
     const highest = placedPacks.length ? Math.max(...placedPacks) : 0;
     const avg = placedPacks.length ? placedPacks.reduce((a, b) => a + b, 0) / placedPacks.length : 0;
 
-    // Placement percentage of 4th year eligible students in this filtered set
     const eligible4th = targetStudents.filter(s => s.yearOfStudy === "4th Year");
     const placed4th = eligible4th.filter(s => s.placementStatus === "Placed").length;
     const pct = eligible4th.length ? (placed4th / eligible4th.length) * 100 : 0;
@@ -131,6 +259,440 @@ export const Dashboard = () => {
     );
   }
 
+  // --- RENDER STUDENT DASHBOARD ---
+  if (!isAdmin) {
+    if (!studentProfile) {
+      return (
+        <div className="space-y-6 max-w-2xl mx-auto slide-in py-8">
+          <div className="glass-card p-8 rounded-3xl space-y-6 bg-slate-950/40 border border-slate-800">
+            <div className="text-center space-y-2">
+              <div className="mx-auto w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-primary-500/20">
+                <GraduationCap size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Setup Your Career Profile</h3>
+              <p className="text-xs text-slate-400">
+                We couldn't find an existing student record linked to your email (**{user?.email}**). Choose an option below to get started.
+              </p>
+            </div>
+
+            {/* Toggle Tab */}
+            <div className="flex p-1.5 bg-slate-100 dark:bg-slate-900 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setShowCreate(false)}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  !showCreate 
+                    ? "bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 shadow-sm animate-pulse-slow" 
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                }`}
+              >
+                Link to Existing Student Record
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCreate(true)}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  showCreate 
+                    ? "bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 shadow-sm animate-pulse-slow" 
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                }`}
+              >
+                Create New Profile
+              </button>
+            </div>
+
+            {/* OPTION 1: LINK EXISTING PROFILE */}
+            {!showCreate ? (
+              <form onSubmit={handleLinkExisting} className="space-y-4">
+                <div className="space-y-1.5 flex flex-col">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Select Your Name
+                  </label>
+                  <select
+                    required
+                    value={selectedExistingId}
+                    onChange={(e) => setSelectedExistingId(e.target.value)}
+                    className="w-full py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs text-slate-800 dark:text-slate-200"
+                  >
+                    <option value="">Choose your record from database...</option>
+                    {students.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.registerNumber} - {s.department})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <button
+                  type="submit"
+                  disabled={!selectedExistingId}
+                  className="w-full py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-primary-500/10 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  Link Account & Enter Portal
+                </button>
+              </form>
+            ) : (
+              /* OPTION 2: CREATE NEW PROFILE */
+              <form onSubmit={handleCreateAndLink} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="e.g. Vasanth R"
+                      className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs text-slate-800 dark:text-slate-100"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Register Number
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newRegNo}
+                      onChange={(e) => setNewRegNo(e.target.value)}
+                      placeholder="e.g. 312221104050"
+                      className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs text-slate-800 dark:text-slate-100"
+                    />
+                  </div>
+
+                  <div className="space-y-1 flex flex-col">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Department
+                    </label>
+                    <select
+                      value={newDept}
+                      onChange={(e) => setNewDept(e.target.value)}
+                      className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs text-slate-800 dark:text-slate-200"
+                    >
+                      <option value="CSE">CSE</option>
+                      <option value="IT">IT</option>
+                      <option value="ECE">ECE</option>
+                      <option value="EEE">EEE</option>
+                      <option value="MECH">MECH</option>
+                      <option value="AI-DS">AI-DS</option>
+                      <option value="AI-ML">AI-ML</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1 flex flex-col">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Year of Study
+                    </label>
+                    <select
+                      value={newYear}
+                      onChange={(e) => setNewYear(e.target.value)}
+                      className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs text-slate-800 dark:text-slate-200"
+                    >
+                      <option value="1st Year">1st Year</option>
+                      <option value="2nd Year">2nd Year</option>
+                      <option value="3rd Year">3rd Year</option>
+                      <option value="4th Year">4th Year</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Cumulative GPA (CGPA)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      min="0"
+                      max="10"
+                      value={newCgpa}
+                      onChange={(e) => setNewCgpa(e.target.value)}
+                      className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs text-slate-800 dark:text-slate-100"
+                    />
+                  </div>
+
+                  <div className="space-y-1 flex flex-col">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Internship Count
+                    </label>
+                    <select
+                      value={newInternships}
+                      onChange={(e) => setNewInternships(e.target.value)}
+                      className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs text-slate-800 dark:text-slate-200"
+                    >
+                      <option value="0">0 Internships</option>
+                      <option value="1">1 Internship</option>
+                      <option value="2">2 Internships</option>
+                      <option value="3">3+ Internships</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Skills (Comma Separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={newSkills}
+                    onChange={(e) => setNewSkills(e.target.value)}
+                    placeholder="e.g. Python, React, SQL, Algorithms"
+                    className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs text-slate-800 dark:text-slate-100"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Certifications (Comma Separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={newCerts}
+                    onChange={(e) => setNewCerts(e.target.value)}
+                    placeholder="e.g. AWS Cloud Practitioner, Google Data Analytics"
+                    className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-primary-500 focus:outline-none text-xs text-slate-800 dark:text-slate-100"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/10 transition-colors"
+                >
+                  Create Profile & Enter Portal
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Filter companies matching student's department eligibility
+    const studentDept = studentProfile.department || "CSE";
+    const eligibleCompanies = companies
+      .filter(c => c.eligibleDepartments?.includes(studentDept))
+      .slice(0, 5);
+
+    return (
+      <div className="space-y-6 slide-in">
+        {/* Student Top Welcome Banner */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between p-6 rounded-3xl bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-xl shadow-primary-500/10">
+          <div>
+            <div className="flex items-center space-x-2">
+              <Sparkles size={20} className="text-yellow-300" />
+              <h2 className="text-2xl font-bold tracking-wide">Welcome Back, {studentProfile.name}! 🚀</h2>
+            </div>
+            <p className="text-xs text-primary-100 mt-1.5 max-w-xl">
+              Track your profile metrics, predicted placement potential, and target recruitment opportunities in one dashboard.
+            </p>
+            <button
+              onClick={() => {
+                if (window.confirm("Disconnect your account from this student profile? You will return to the profile setup screen.")) {
+                  localStorage.removeItem("linked_student_id_" + user?.uid);
+                  window.location.reload();
+                }
+              }}
+              className="text-[9px] text-primary-200 hover:text-white underline font-semibold mt-2.5 block text-left"
+            >
+              Switch Linked Student Profile
+            </button>
+          </div>
+          
+          <div className="mt-4 md:mt-0 flex gap-3">
+            <Link
+              to="/interview"
+              className="flex items-center space-x-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold rounded-xl transition-all shadow-md"
+            >
+              <Zap size={14} className="text-yellow-300" />
+              <span>Launch Mock Interview</span>
+            </Link>
+            <Link
+              to="/predictions"
+              className="flex items-center space-x-1.5 px-4 py-2 bg-slate-950 text-white text-xs font-semibold rounded-xl hover:bg-slate-900 transition-all shadow-md"
+            >
+              <span>Match Sandbox</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+
+        {/* Student Profile KPIs */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* CGPA */}
+          <div className="glass-card p-5 rounded-2xl flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">CGPA Average</p>
+              <h3 className="text-3xl font-bold">{studentProfile.cgpa} <span className="text-xs font-semibold text-slate-400">/ 10</span></h3>
+              <span className="text-[10px] text-emerald-500 font-semibold">Excellent Academic Standing</span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
+              <GraduationCap size={24} />
+            </div>
+          </div>
+
+          {/* Technical Skills */}
+          <div className="glass-card p-5 rounded-2xl flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Key Technical Skills</p>
+              <h3 className="text-3xl font-bold">{studentProfile.skills?.length || 0}</h3>
+              <span className="text-[10px] text-indigo-500 font-semibold truncate block max-w-[150px]">
+                {studentProfile.skills?.slice(0, 2).join(", ")}...
+              </span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              <BookOpen size={24} />
+            </div>
+          </div>
+
+          {/* Certifications */}
+          <div className="glass-card p-5 rounded-2xl flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Certifications</p>
+              <h3 className="text-3xl font-bold">{studentProfile.certifications?.length || 0}</h3>
+              <span className="text-[10px] text-indigo-500 font-semibold">Professional Credentials</span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <Award size={24} />
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="glass-card p-5 rounded-2xl flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Placement Status</p>
+              <h3 className="text-2xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">
+                {studentProfile.placementStatus || "Seeking"}
+              </h3>
+              {studentProfile.selectedCompany ? (
+                <span className="text-[10px] text-slate-500">At {studentProfile.selectedCompany} ({studentProfile.package} LPA)</span>
+              ) : (
+                <span className="text-[10px] text-slate-500">Actively matching drives</span>
+              )}
+            </div>
+            <div className="p-3.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <UserCheck size={24} />
+            </div>
+          </div>
+        </div>
+
+        {/* Student Analytics & Matches Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* AI Placement Probability Meter */}
+          <div className="glass-card p-6 rounded-2xl flex flex-col items-center justify-center space-y-4">
+            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 self-start">AI Predicted Placement Potential</h4>
+            
+            <div className="relative flex items-center justify-center w-40 h-40">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle
+                  cx="80"
+                  cy="80"
+                  r="65"
+                  stroke="currentColor"
+                  strokeWidth="10"
+                  className="text-slate-200 dark:text-slate-800"
+                  fill="transparent"
+                />
+                <circle
+                  cx="80"
+                  cy="80"
+                  r="65"
+                  stroke="currentColor"
+                  strokeWidth="10"
+                  className="text-primary-600 dark:text-primary-400 gauge-path"
+                  style={{
+                    "--stroke-dasharray": "408",
+                    "--initial-offset": "408",
+                    "--target-offset": 408 - (408 * (predictedProbability || 50)) / 100
+                  }}
+                  fill="transparent"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute text-center">
+                <span className="text-4xl font-extrabold">{predictedProbability !== null ? `${predictedProbability}%` : "Calculating..."}</span>
+                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Fit Score</p>
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Expected Package: {predictedSalary ? `${predictedSalary} LPA` : "Calculating..."}
+              </p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                Based on your academic profile, skill match, and internships.
+              </p>
+            </div>
+          </div>
+
+          {/* Upcoming Recruiter Drives & Eligibility */}
+          <div className="glass-card p-6 rounded-2xl lg:col-span-2 space-y-4">
+            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Recommended Recruiter Drives (Eligible)</h4>
+            <div className="space-y-3.5">
+              {eligibleCompanies.map((company, index) => {
+                const isEligible = studentProfile.cgpa >= company.minimumCGPA;
+                return (
+                  <div 
+                    key={index} 
+                    className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/20 hover:bg-slate-50 dark:hover:bg-slate-950/50 transition-colors"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{company.companyName}</p>
+                      <p className="text-[10px] text-slate-500 font-medium">Role: {company.role} | Min GPA: {company.minimumCGPA}</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {company.skillsRequired?.slice(0, 3).map((s, idx) => (
+                          <span key={idx} className="px-1.5 py-0.5 rounded text-[8px] font-semibold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-right flex flex-col items-end space-y-1">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {company.package > 0 ? `${company.package} LPA` : `${company.stipend}/mo`}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                        isEligible 
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400" 
+                          : "bg-rose-100 text-rose-800 dark:bg-rose-950/20 dark:text-rose-400"
+                      }`}>
+                        {isEligible ? "Eligible" : "Below GPA"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* AI Career Coaching Call to Action */}
+        <div className="glass-card p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1 md:max-w-xl">
+            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
+              <Sparkles size={16} className="text-yellow-500" />
+              <span>Boost Your Placement Strategy with AI Coaching</span>
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Use our AI Mock Interview Coach to practice company-specific interview prompts. The engine will evaluate your code logic, communication, and STAR formatting and deliver real-time report feedback.
+            </p>
+          </div>
+          <Link
+            to="/interview"
+            className="flex items-center justify-center space-x-1.5 px-5 py-3 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-xs font-semibold shadow-lg shadow-primary-600/10 transition-all shrink-0 active:scale-[0.98]"
+          >
+            <span>Start Practice Interview</span>
+            <Zap size={14} className="text-yellow-300" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // --- RENDER ADMIN DASHBOARD (DEFAULT ORIGINAL) ---
   const kpis = filteredKpis;
   const COLORS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
   const monthlyTrends = analytics.monthlyTrends || [];
@@ -145,7 +707,7 @@ export const Dashboard = () => {
         <div>
           <div className="flex items-center space-x-2">
             <Sparkles size={20} className="text-yellow-300" />
-            <h2 className="text-2xl font-bold tracking-wide">Campus Recruitment Analytics</h2>
+            <h2 className="text-2xl font-bold tracking-wide">Campus Recruitment Analytics (Admin)</h2>
           </div>
           <p className="text-xs text-primary-100 mt-1.5 max-w-xl">
             Real-time insight engine tracking internship offers, full-time placements, and algorithmic student predictions.
